@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken')
 exports.createNewUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     let encryptedPassword = await bcrypt.hash(req.body.password, salt);
-    const userData = await User.create({
+    const user = await User.create({
         name: req.body.name,
         email: req.body.email,
         password: encryptedPassword
@@ -14,12 +14,18 @@ exports.createNewUser = async (req, res) => {
 
     const data = {
         user: {
-            id: userData.id
+            id: user.id
         }
     };
 
-    const authToken = jwt.sign(data, JWT_SECRET)
-    return res.send({authToken});
+    const authToken = jwt.sign(data, JWT_SECRET);
+    const userData = {
+        name : user.name,
+        email : user.email,
+        payment_status : user.paymentStatus,
+        authToken : authToken
+     }
+     return res.send({userData});
 }
 
 exports.signInUser = async (req, res) => {
@@ -37,11 +43,19 @@ exports.signInUser = async (req, res) => {
             user: {
                 id: user.id
             }
+        };
+    
+        const authToken = await jwt.sign(data, JWT_SECRET);
+        const userData = {
+           name : user.name,
+           email : user.email,
+           payment_status : user.paymentStatus,
+           authToken : authToken
         }
-        const authToken = jwt.sign(data, JWT_SECRET);
-        return res.send({authToken});
+        return res.send({userData});
     }
     catch (err){
+        console.log(err);
         return res.status(401).json({errors: "Incorrect credentials entered"})
     }
 }
